@@ -1,7 +1,8 @@
 import { computed, ComputedRef, ref, shallowRef } from 'vue'
 import api from '@/utils/axios'
+import router from '@/router'
+import { useToast } from 'vue-toastification'
 
-// Type definitions
 interface DeleteOptions<T> {
   url: string
   params?: Record<string, any>
@@ -21,8 +22,17 @@ interface UseDeleteReturn<T> {
   remove: (params?: Record<string, any>) => Promise<void>
 }
 
+interface TErrorResponse {
+  status: number
+  data: {
+    message?: string
+    prop?: string
+  }
+}
+
 export function useDelete<T>(options: DeleteOptions<T>): UseDeleteReturn<T> {
   const { url, params: initialParams, onSuccess, onError } = options
+  const toast = useToast()
 
   let rawData = shallowRef<T>(null as unknown as T)
   const data = computed(() => ({
@@ -31,6 +41,28 @@ export function useDelete<T>(options: DeleteOptions<T>): UseDeleteReturn<T> {
   }))
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  const catchHandle = (err: any, icon = 'toast-error', reject: any = null) => {
+    const response = err.response as TErrorResponse
+    if (response?.status === 401) {
+      toast.error(
+        `${response?.data?.message ?? ''} ${response?.data.prop ?? ''}`,
+        {
+          icon: { iconClass: icon, iconChildren: '', iconTag: 'div', limit: 4 },
+        },
+      )
+      localStorage.removeItem('session')
+      router.push({ name: 'Auth' })
+    } else {
+      toast.error(
+        `${response?.data?.message ?? ''} ${response?.data.prop ?? ''}`,
+        {
+          icon: { iconClass: icon, iconChildren: '', iconTag: 'div', limit: 4 },
+        },
+      )
+    }
+    if (reject) return reject(err)
+  }
 
   const remove = async (params?: Record<string, any>): Promise<void> => {
     loading.value = true
@@ -43,9 +75,16 @@ export function useDelete<T>(options: DeleteOptions<T>): UseDeleteReturn<T> {
         params: params || initialParams,
       })
       rawData = shallowRef(response.data as T)
+      if (onSuccess) onSuccess(response.data as T)
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'An error occurred'
-      if (onError) onError(err)
+      // If onError is provided, let it handle the error and skip catchHandle
+      if (onError) {
+        onError(err)
+      } else {
+        // Otherwise, use the default catchHandle
+        catchHandle(err)
+        error.value = err instanceof Error ? err.message : 'Error occurred'
+      }
     } finally {
       loading.value = false
     }

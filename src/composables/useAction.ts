@@ -1,7 +1,8 @@
 import { computed, ComputedRef, ref, shallowRef } from 'vue'
 import api from '@/utils/axios'
+import router from '@/router'
+import { useToast } from 'vue-toastification'
 
-// Type definitions
 interface ActionOptions<T> {
   url: string
   method: 'POST' | 'PUT'
@@ -22,8 +23,17 @@ interface UseActionReturn<T> {
   execute: (payload?: T) => Promise<void>
 }
 
+interface TErrorResponse {
+  status: number
+  data: {
+    message?: string
+    prop?: string
+  }
+}
+
 export function useAction<T>(options: ActionOptions<T>): UseActionReturn<T> {
   const { url, method, data: initialData, onSuccess, onError } = options
+  const toast = useToast()
 
   let rawData = shallowRef<T>(null as unknown as T)
   const data = computed(() => ({
@@ -32,6 +42,28 @@ export function useAction<T>(options: ActionOptions<T>): UseActionReturn<T> {
   }))
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  const catchHandle = (err: any, icon = 'toast-error', reject: any = null) => {
+    const response = err.response as TErrorResponse
+    if (response?.status === 401) {
+      toast.error(
+        `${response?.data?.message ?? ''} ${response?.data.prop ?? ''}`,
+        {
+          icon: { iconClass: icon, iconChildren: '', iconTag: 'div', limit: 4 },
+        },
+      )
+      localStorage.removeItem('session')
+      router.push({ name: 'Auth' })
+    } else {
+      toast.error(
+        `${response?.data?.message ?? ''} ${response?.data.prop ?? ''}`,
+        {
+          icon: { iconClass: icon, iconChildren: '', iconTag: 'div', limit: 4 },
+        },
+      )
+    }
+    if (reject) return reject(err)
+  }
 
   const execute = async (payload?: T): Promise<void> => {
     loading.value = true
@@ -44,9 +76,16 @@ export function useAction<T>(options: ActionOptions<T>): UseActionReturn<T> {
         data: payload || initialData,
       })
       rawData = shallowRef(response.data as T)
+      if (onSuccess) onSuccess(response.data as T)
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'An error occurred'
-      if (onError) onError(err)
+      // If onError is provided, let it handle the error and skip catchHandle
+      if (onError) {
+        onError(err)
+      } else {
+        // Otherwise, use the default catchHandle
+        catchHandle(err)
+        error.value = err instanceof Error ? err.message : 'Error occurred'
+      }
     } finally {
       loading.value = false
     }

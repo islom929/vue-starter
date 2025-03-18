@@ -70,6 +70,9 @@ devDependencies:
   vue-eslint-parser:
     specifier: ^9.4.3
     version: 9.4.3(eslint@9.22.0)
+  vue-toastification:
+    specifier: ^2.0.0-rc.5
+    version: 2.0.0-rc.5(vue@3.5.13)
   vue-tsc:
     specifier: ^2.2.4
     version: 2.2.8(typescript@5.8.2)
@@ -2199,6 +2202,14 @@ packages:
       '@vue/devtools-api': 6.6.4
       vue: 3.5.13(typescript@5.8.2)
     dev: false
+
+  /vue-toastification@2.0.0-rc.5(vue@3.5.13):
+    resolution: {integrity: sha512-q73e5jy6gucEO/U+P48hqX+/qyXDozAGmaGgLFm5tXX4wJBcVsnGp4e/iJqlm9xzHETYOilUuwOUje2Qg1JdwA==}
+    peerDependencies:
+      vue: ^3.0.2
+    dependencies:
+      vue: 3.5.13(typescript@5.8.2)
+    dev: true
 
   /vue-tsc@2.2.8(typescript@5.8.2):
     resolution: {integrity: sha512-jBYKBNFADTN+L+MdesNX/TB3XuDSyaWynKMDgR+yCSln0GQ9Tfb7JS2lr46s2LiFUT1WsmfWsSvIElyxzOPqcQ==}

@@ -107,7 +107,6 @@ const {
   method: 'POST' as const,
   data: { id: 0, title: 'Initial Post', body: 'Initial Content', userId: 1 },
   onSuccess: (post) => ({ id: post.id, title: post.title }),
-  onError: (error) => console.error('Action Error:', error),
 })
 
 const createPost = () => {
@@ -124,7 +123,6 @@ const {
   url: '/posts/1',
   params: { id: 1 },
   onSuccess: (response) => ({ status: response ? 'deleted' : 'not found' }),
-  onError: (error) => console.error('Delete Error:', error),
 })
 
 const deletePost = () => {
